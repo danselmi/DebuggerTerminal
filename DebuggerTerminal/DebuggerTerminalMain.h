@@ -14,6 +14,8 @@
 #include "led.h"
 #include "DataPanel.h"
 #include "DataInputControl.h"
+#include "TcpServer.hpp"
+
 
 class DebuggerTerminalFrame: public wxFrame
 {
@@ -21,6 +23,11 @@ class DebuggerTerminalFrame: public wxFrame
 
         DebuggerTerminalFrame(wxWindow* parent,wxWindowID id = -1);
         virtual ~DebuggerTerminalFrame();
+
+    private:
+        TcpServer* tcpserver;
+        boost::asio::io_service io_service_;
+        uint16_t tcp_port_;
 
     private:
         bool initDone;
@@ -53,7 +60,7 @@ class DebuggerTerminalFrame: public wxFrame
     private:
         void OnRxTimer(wxTimerEvent &event);
         void OnTxTimer(wxTimerEvent &event);
-        void OnServerreadTimer(wxTimerEvent &event);
+        void OnServerReadTimer(wxTimerEvent &event);
         void OnPortRescan(wxCommandEvent &event);
         void OnConnectToggle(wxCommandEvent &event);
         void OnToggleLinestate(wxCommandEvent &event);
@@ -115,7 +122,6 @@ class DebuggerTerminalFrame: public wxFrame
         void SendNextChunkOfOpenedFile();
         bool CheckNewline(char ch, char lastCh);
         short rxLastChar_, txLastChar_;
-
     private:
         wxAuiManager *auiManager_;
         wxAuiNotebook *auiNotebook_;
@@ -127,6 +133,7 @@ class DebuggerTerminalFrame: public wxFrame
         wxChoice *dataWidthChoice_;
         wxChoice *stopBitsChoice_;
         wxChoice *parityChoice_;
+        wxChoice *port_tcp_;
         wxCheckBox *ctsFlowCheckBox_;
         wxMenuItem *disconnectOnLostFocus_;
 
@@ -215,6 +222,7 @@ class DebuggerTerminalFrame: public wxFrame
         static const long ID_DATA_WIDTH_CHOICE;
         static const long ID_STOPBITS_CHOICE;
         static const long ID_PARITY_CHOICE;
+        static const long ID_TCP_PORT;
         static const long ID_CTSFLOW_CHECKBOX;
 
         static const long ID_STREAMCOUNTER_TOOLBAR;
@@ -288,6 +296,7 @@ class DebuggerTerminalFrame: public wxFrame
 
         static const long ID_RX_TIMER;
         static const long ID_TX_TIMER;
+        static const long ID_SERVER_RX_TIMER;
 
         DECLARE_EVENT_TABLE()
 };

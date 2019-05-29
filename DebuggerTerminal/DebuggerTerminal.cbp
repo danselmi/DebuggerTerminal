@@ -67,7 +67,9 @@
 			<Add option="-D__GNUWIN32__" />
 			<Add option="-D__WXMSW__" />
 			<Add option="-DwxUSE_UNICODE" />
+			<Add option="-DWIN32_LEAN_AND_MEAN" />
 			<Add directory="$(#wx31_64)/include" />
+			<Add directory="externals/BoostAsioTcpServer/BoostAsioTcpServer/trunk/lib" />
 		</Compiler>
 		<ResourceCompiler>
 			<Add directory="$(#wx31_64)/include" />
@@ -85,13 +87,16 @@
 			<Add library="liboleaut32.a" />
 			<Add library="libuuid.a" />
 			<Add library="libcomctl32.a" />
-			<Add library="libwsock32.a" />
 			<Add library="libodbc32.a" />
 			<Add library="serialport" />
 			<Add library="shlwapi" />
 			<Add library="version" />
 			<Add library="uxtheme" />
 			<Add library="oleacc" />
+			<Add library="ws2_32" />
+			<Add library="boost_system-mt" />
+			<Add library="wsock32" />
+			<Add library="libboost_system-mt" />
 		</Linker>
 		<Unit filename="DataInputControl.cpp" />
 		<Unit filename="DataInputControl.h" />
@@ -103,6 +108,8 @@
 		<Unit filename="DebuggerTerminalMain.h" />
 		<Unit filename="SelectFontSizeDialog.cpp" />
 		<Unit filename="SelectFontSizeDialog.h" />
+		<Unit filename="externals/BoostAsioTcpServer/BoostAsioTcpServer/trunk/lib/TcpServer.cpp" />
+		<Unit filename="externals/BoostAsioTcpServer/BoostAsioTcpServer/trunk/lib/TcpServer.hpp" />
 		<Unit filename="led.cpp" />
 		<Unit filename="led.h" />
 		<Unit filename="resource.rc">

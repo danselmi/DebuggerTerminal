@@ -30,7 +30,7 @@ const long DebuggerTerminalFrame::ID_DATA_WIDTH_CHOICE = wxNewId();
 const long DebuggerTerminalFrame::ID_STOPBITS_CHOICE = wxNewId();
 const long DebuggerTerminalFrame::ID_PARITY_CHOICE = wxNewId();
 const long DebuggerTerminalFrame::ID_CTSFLOW_CHECKBOX = wxNewId();
-
+const long DebuggerTerminalFrame::ID_TCP_PORT = wxNewId();
 const long DebuggerTerminalFrame::ID_STREAMCOUNTER_TOOLBAR = wxNewId();
 const long DebuggerTerminalFrame::ID_STREAMCOUNTER_RX_TEXT = wxNewId();
 const long DebuggerTerminalFrame::ID_STREAMCOUNTER_TX_TEXT = wxNewId();
@@ -142,6 +142,7 @@ BEGIN_EVENT_TABLE(DebuggerTerminalFrame,wxFrame)
     EVT_UPDATE_UI   (ID_STOPBITS_CHOICE,                   DebuggerTerminalFrame::OnUpdateConnectControls )
     EVT_UPDATE_UI   (ID_PARITY_CHOICE,                     DebuggerTerminalFrame::OnUpdateConnectControls )
     EVT_UPDATE_UI   (ID_CTSFLOW_CHECKBOX,                  DebuggerTerminalFrame::OnUpdateConnectControls )
+    EVT_UPDATE_UI   (ID_TCP_PORT,                          DebuggerTerminalFrame::OnUpdateConnectControls )
     EVT_MENU        (ID_MENU_QUIT,                         DebuggerTerminalFrame::OnQuit)
     EVT_MENU        (ID_MENU_ABOUT,                        DebuggerTerminalFrame::OnAbout)
     EVT_ACTIVATE    (                                      DebuggerTerminalFrame::OnActivate)
@@ -241,25 +242,22 @@ DebuggerTerminalFrame::DebuggerTerminalFrame(wxWindow* parent, wxWindowID id):
     wasConnected_(false),
     currentPort_(-1),
     rxLastChar_(-1),
-    txLastChar_(-1)
+    txLastChar_(-1),
+    tcpserver(nullptr)
 {
     SetTitle(_T("DebuggerTerminal"));
     //SetIcon(const wxIcon& icon);
-
+    tcpserver = new TcpServer(&tcp_port_, io_service_);
     wxConfigBase::Set(new wxFileConfig());
 
     sp_new_config(&portConfig_);
 
     int x=10, y=10, h=800, w=600;
-    wxString last_port;
 
     wxConfigBase::Get()->Read(_T("FrameSizeX"), &w);
     wxConfigBase::Get()->Read(_T("FrameSizeY"), &h);
     wxConfigBase::Get()->Read(_T("FramePosX"), &x);
     wxConfigBase::Get()->Read(_T("FramePosY"), &y);
-
-
-    //wxConfigBase::Get()->Read(_T(""), & );
 
     bool b=false;
     wxConfigBase::Get()->Read(_T("FrameMaximized"), &b);
@@ -395,8 +393,6 @@ DebuggerTerminalFrame::~DebuggerTerminalFrame()
     wxConfigBase::Get()->Write(_T("FramePosX"), pos.x);
     wxConfigBase::Get()->Write(_T("FramePosY"), pos.y);
 
-//    wxConfigBase::Get()->Write(_T(""),current);
-
     sp_free_config(portConfig_);
 
     auiManager_->UnInit();
@@ -487,6 +483,15 @@ void DebuggerTerminalFrame::CreateConnectionToolBar()
     parityChoice_->Append(_T("Space"));
     parityChoice_->SetToolTip(_("Set parity mode"));
     connectionToolBar->AddControl(parityChoice_);
+
+    StaticText = new wxStaticText(connectionToolBar, wxID_ANY, _("Tcp Port"));
+    connectionToolBar->AddControl(StaticText);
+
+    port_tcp_ = new wxChoice(connectionToolBar, ID_TCP_PORT);
+    port_tcp_->Append(_T("4242"));
+    port_tcp_->Append(_T("4243"));
+    port_tcp_->SetSelection( port_tcp_->Append(_("4244")) );
+    connectionToolBar->AddControl(port_tcp_);
 
     ctsFlowCheckBox_ = new wxCheckBox(connectionToolBar, ID_CTSFLOW_CHECKBOX, _("CTS Flow control"));
     ctsFlowCheckBox_->SetValue(false);
@@ -1071,6 +1076,20 @@ void DebuggerTerminalFrame::Connect()
         break;
     }
 
+    switch(port_tcp_->GetSelection())
+    {
+    default:
+    case 0:
+        tcp_port_ = 4243;
+        break;
+    case 1:
+        tcp_port_ = 4242;
+        break;
+    case 2:
+        tcp_port_ = 4244;
+        break;
+    }
+
     if ( ctsFlowCheckBox_->GetValue() )
     {
         sp_set_config_flowcontrol(portConfig_, SP_FLOWCONTROL_RTSCTS);
@@ -1101,6 +1120,8 @@ void DebuggerTerminalFrame::Connect()
             currentPort_ = portChoice_->GetSelection();
             SetStatuslines();
             rxTimer_.Start(1);
+            serverRxTimer_.Start(1);
+            tcpserver->start();
             wxString statusText(_("Connected to "));
             statusText += portChoice_->GetStringSelection();
             statusText += wxString::Format(_T(" (%dbaud, %d"), baudrate, 5 + dataWidthChoice_->GetSelection());
@@ -1134,11 +1155,15 @@ void DebuggerTerminalFrame::Disconnect()
         rxTimer_.Stop();
     if(txTimer_.IsRunning())
         txTimer_.Stop();
+    if (serverRxTimer_.IsRunning())
+        serverRxTimer_.Stop();
     if(fileToSend_.IsOpened())
         fileToSend_.Close();
-
+    tcpserver->stop();
     SetStatusText(_T("Disconnected"));
 }
+
+
 
 void DebuggerTerminalFrame::OnConnectToggle(wxCommandEvent &WXUNUSED(event))
 {
@@ -1179,11 +1204,13 @@ void DebuggerTerminalFrame::OnTxTimer(wxTimerEvent &WXUNUSED(event))
 
 void DebuggerTerminalFrame::OnServerReadTimer(wxTimerEvent &event)
 {
-    if (server.connected())
+    io_service_.poll();
+
+    if (tcpserver->conncted())
     {
         uint8_t *data;
-        size_t length;
-        server.get_received_data(&data, &length); //caller takes ownership of data
+        size_t length = 0;
+        tcpserver->get_received_data(&data, &length); //caller takes ownership of data
         if(length)
         {
             int cnt = 0;
@@ -1199,7 +1226,6 @@ void DebuggerTerminalFrame::OnServerReadTimer(wxTimerEvent &event)
 }
 
 void DebuggerTerminalFrame::OnRxTimer(wxTimerEvent &WXUNUSED(event))
-
 {
     const int BufferLength = 8192;
     bool isOpen = PortIsOpen();
@@ -1214,15 +1240,28 @@ void DebuggerTerminalFrame::OnRxTimer(wxTimerEvent &WXUNUSED(event))
             // what to do here?
             return;
         }
-        if(server.connected())
+        if(tcpserver->conncted())
         {
             if (length)
             {
-                server.set_transmit_data( static_cast<uint8_t>(buffer), static_cast<size_t>(length)); // data will be copied by callee
+
+                tcpserver->set_transmit_data( reinterpret_cast<uint8_t*>(&buffer[0]), static_cast<size_t>(length)); // data will be copied by callee
             }
         }
 
         rxStreamCount_ += length;
+
+        if(length)
+        {
+            int NewlineAfter = autoInsertNewlineSpinCtrl_->GetValue();
+            if((NewlineAfter!=0) && (++NewlineAfterCharsCounter == NewlineAfter))
+                txDataPanel_->AppendNewline();
+
+            char err = 0;
+            txDataPanel_->AppendChar((*buffer), err);
+    //        if ( CheckNewline(length,rxLastChar_))
+    //                rxDataPanel_->AppendNewline();
+        }
 
         if (length == 0)
             pauseCounter_++;

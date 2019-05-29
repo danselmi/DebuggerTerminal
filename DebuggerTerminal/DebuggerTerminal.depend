@@ -1722,7 +1722,7 @@
 1544373608 d:\wxwidgets-3.1.2\include\wx\univ\theme.h
 	"wx/string.h"
 
-1548845566 d:\debuggerterminal\debuggerterminalmain.h
+1559053420 d:\debuggerterminal\debuggerterminalmain.h
 	<wx/aui/aui.h>
 	<wx/tglbtn.h>
 	<wx/choice.h>
@@ -1735,6 +1735,7 @@
 	"led.h"
 	"DataPanel.h"
 	"DataInputControl.h"
+	"TcpServer.hpp"
 
 1544373608 d:\wxwidgets-3.1.2\include\wx\aui\aui.h
 	"wx/aui/framemanager.h"
@@ -2259,7 +2260,7 @@
 	<wx/dcclient.h>
 	<wx/thread.h>
 
-1554293405 source:d:\debuggerterminal\debuggerterminalmain.cpp
+1559055796 source:d:\debuggerterminal\debuggerterminalmain.cpp
 	"DebuggerTerminalMain.h"
 	<wx/msgdlg.h>
 	<wx/menu.h>
@@ -2272,7 +2273,6 @@
 	<wx/fileconf.h>
 	"SelectFontSizeDialog.h"
 	<libserialport.h>
-	<TCP_server.hpp>
 
 1544373608 d:\wxwidgets-3.1.2\include\wx\valgen.h
 	"wx/validate.h"
@@ -2469,4 +2469,48 @@
 	<wx/intl.h>
 
 1554304433 d:\debuggerterminal\\tcp_server.hpp
+
+1557229084 source:d:\debuggerterminal\lib\tcpserver.cpp
+	"TcpServer.hpp"
+
+1557229084 d:\debuggerterminal\lib\tcpserver.hpp
+	<boost/asio.hpp>
+	<queue>
+	"boost/array.hpp"
+	<boost/bind.hpp>
+	<thread>
+	<chrono>
+
+1558538394 source:d:\debuggerterminal\tcpserver.cpp
+	"TcpServer.hpp"
+
+1558537026 d:\debuggerterminal\tcpserver.hpp
+	<boost/asio.hpp>
+	<queue>
+	"boost/array.hpp"
+	<boost/bind.hpp>
+	<thread>
+	<chrono>
+
+1558599925 d:\debuggerterminal\boostasiotcpserver\trunk\lib\tcpserver.hpp
+	<boost/asio.hpp>
+	<queue>
+	"boost/array.hpp"
+	<boost/bind.hpp>
+	<thread>
+	<chrono>
+
+1558599925 source:d:\debuggerterminal\boostasiotcpserver\trunk\lib\tcpserver.cpp
+	"TcpServer.hpp"
+
+1558696041 d:\debuggerterminal\externals\boostasiotcpserver\boostasiotcpserver\trunk\lib\tcpserver.hpp
+	<boost/asio.hpp>
+	<queue>
+	"boost/array.hpp"
+	<boost/bind.hpp>
+	<thread>
+	<chrono>
+
+1558696041 source:d:\debuggerterminal\externals\boostasiotcpserver\boostasiotcpserver\trunk\lib\tcpserver.cpp
+	"TcpServer.hpp"
 
