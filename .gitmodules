@@ -1,3 +1,0 @@
-[submodule "DebuggerTerminal/externals/BoostAsioTcpServer"]
-	path = DebuggerTerminal/externals/BoostAsioTcpServer
-	url = https://github.com/DaAlbrecht/BoostAsioTcpServer
