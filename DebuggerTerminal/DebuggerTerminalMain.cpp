@@ -232,7 +232,8 @@ END_EVENT_TABLE()
 
 DebuggerTerminalFrame::DebuggerTerminalFrame(wxWindow* parent, wxWindowID id):
     wxFrame(parent, id, _T("ourMainFrame"), wxDefaultPosition, wxSize(800, 600)),
-    initDone(false),
+    tcpserver_(new TcpServer(&tcp_port_, io_service_)),
+    initDone_(false),
     pauseCounter_(0),
     txStreamCount_(0),
     rxStreamCount_(0),
@@ -242,12 +243,10 @@ DebuggerTerminalFrame::DebuggerTerminalFrame(wxWindow* parent, wxWindowID id):
     wasConnected_(false),
     currentPort_(-1),
     rxLastChar_(-1),
-    txLastChar_(-1),
-    tcpserver(nullptr)
+    txLastChar_(-1)
 {
     SetTitle(_T("DebuggerTerminal"));
     //SetIcon(const wxIcon& icon);
-    tcpserver = new TcpServer(&tcp_port_, io_service_);
     wxConfigBase::Set(new wxFileConfig());
 
     sp_new_config(&portConfig_);
@@ -362,7 +361,7 @@ DebuggerTerminalFrame::DebuggerTerminalFrame(wxWindow* parent, wxWindowID id):
 
     sendFileBuffer_ = 0;
 
-    defaultPerspective = auiManager_->SavePerspective();
+    defaultPerspective_ = auiManager_->SavePerspective();
     wxString configuredPerspective = wxConfigBase::Get()->Read(_T("Perspective"), wxEmptyString);
     if (!configuredPerspective.IsEmpty())
         auiManager_->LoadPerspective(configuredPerspective);
@@ -373,7 +372,7 @@ DebuggerTerminalFrame::DebuggerTerminalFrame(wxWindow* parent, wxWindowID id):
     auiManager_->AddPane(auiNotebook_, wxAuiPaneInfo().CentrePane());
 
     auiManager_->Update();
-    initDone = true;
+    initDone_ = true;
 }
 
 DebuggerTerminalFrame::~DebuggerTerminalFrame()
@@ -901,18 +900,23 @@ void DebuggerTerminalFrame::InitMenuBar()
     char bitmask = rxDataPanel_->GetBitMask();
     rxDataPanel_->SetBitMask(bitmask);
     menuItem = new wxMenuItem(bitmaskMenu, ID_MENU_RECEIVE_BITMASK_NONE,_("none"), wxEmptyString, wxITEM_CHECK);
+    bitmaskMenu->Append(menuItem);
     menuItem->Check(bitmask == 0xff);
     bitmaskMenu->Append(menuItem);
     menuItem = new wxMenuItem(bitmaskMenu, ID_MENU_RECEIVE_BITMASK_8,_("8"), wxEmptyString, wxITEM_CHECK);
+    bitmaskMenu->Append(menuItem);
     menuItem->Check(bitmask == 0x7f);
     bitmaskMenu->Append(menuItem);
     menuItem = new wxMenuItem(bitmaskMenu, ID_MENU_RECEIVE_BITMASK_8_7,_("8:7"), wxEmptyString, wxITEM_CHECK);
+    bitmaskMenu->Append(menuItem);
     menuItem->Check(bitmask == 0x3f);
     bitmaskMenu->Append(menuItem);
     menuItem = new wxMenuItem(bitmaskMenu, ID_MENU_RECEIVE_BITMASK_8_6,_("8:6"), wxEmptyString, wxITEM_CHECK);
+    bitmaskMenu->Append(menuItem);
     menuItem->Check(bitmask == 0x1f);
     bitmaskMenu->Append(menuItem);
     menuItem = new wxMenuItem(bitmaskMenu, ID_MENU_RECEIVE_BITMASK_8_5,_("8:5"), wxEmptyString, wxITEM_CHECK);
+    bitmaskMenu->Append(menuItem);
     menuItem->Check(bitmask == 0x0f);
     bitmaskMenu->Append(menuItem);
     menu->AppendSubMenu(bitmaskMenu, _("Receive bitmask..."), wxEmptyString);
@@ -1121,7 +1125,7 @@ void DebuggerTerminalFrame::Connect()
             SetStatuslines();
             rxTimer_.Start(1);
             serverRxTimer_.Start(1);
-            tcpserver->start();
+            tcpserver_->start();
             wxString statusText(_("Connected to "));
             statusText += portChoice_->GetStringSelection();
             statusText += wxString::Format(_T(" (%dbaud, %d"), baudrate, 5 + dataWidthChoice_->GetSelection());
@@ -1159,7 +1163,8 @@ void DebuggerTerminalFrame::Disconnect()
         serverRxTimer_.Stop();
     if(fileToSend_.IsOpened())
         fileToSend_.Close();
-    tcpserver->stop();
+    if(tcpserver_->conncted())
+        tcpserver_->stop();
     SetStatusText(_T("Disconnected"));
 }
 
@@ -1206,17 +1211,17 @@ void DebuggerTerminalFrame::OnServerReadTimer(wxTimerEvent &event)
 {
     io_service_.poll();
 
-    if (tcpserver->conncted())
+    if (tcpserver_->conncted())
     {
         uint8_t *data;
         size_t length = 0;
-        tcpserver->get_received_data(&data, &length); //caller takes ownership of data
+        tcpserver_->get_received_data(&data, &length); //caller takes ownership of data
         if(length)
         {
-            int cnt = 0;
+            size_t cnt = 0;
             do
             {
-                int number_of_written_data = sp_nonblocking_write(serialPort_, data+cnt, length-cnt);
+                size_t number_of_written_data = sp_nonblocking_write(serialPort_, data+cnt, length-cnt);
                 cnt += number_of_written_data;
             }
             while(cnt < length);
@@ -1240,12 +1245,12 @@ void DebuggerTerminalFrame::OnRxTimer(wxTimerEvent &WXUNUSED(event))
             // what to do here?
             return;
         }
-        if(tcpserver->conncted())
+        if(tcpserver_->conncted())
         {
             if (length)
             {
 
-                tcpserver->set_transmit_data( reinterpret_cast<uint8_t*>(&buffer[0]), static_cast<size_t>(length)); // data will be copied by callee
+                tcpserver_->set_transmit_data( reinterpret_cast<uint8_t*>(&buffer[0]), static_cast<size_t>(length)); // data will be copied by callee
             }
         }
 
@@ -1362,7 +1367,7 @@ void DebuggerTerminalFrame::UpdateLineStates(bool portIsOpen)
 
 void DebuggerTerminalFrame::OnActivate(wxActivateEvent &event)
 {
-    if (!initDone)
+    if (!initDone_)
         return;
 
     if ( event.GetActive() )
@@ -1679,7 +1684,7 @@ void DebuggerTerminalFrame::OnInputControlTextEnter(wxCommandEvent &event)
 
 void DebuggerTerminalFrame::OnDefaultLayout(wxCommandEvent& event)
 {
-    auiManager_->LoadPerspective(defaultPerspective);
+    auiManager_->LoadPerspective(defaultPerspective_);
 
     auiManager_->Update();
 }
@@ -1747,7 +1752,7 @@ void DebuggerTerminalFrame::OnReceiveBitmaskSelected(wxCommandEvent &event)
 
 void DebuggerTerminalFrame::OnUpdateReceiveBitmask(wxUpdateUIEvent &event)
 {
-    if (!initDone)
+    if (!initDone_)
         return;
 
     char bitmask = rxDataPanel_->GetBitMask();

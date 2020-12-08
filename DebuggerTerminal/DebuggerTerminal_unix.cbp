@@ -35,9 +35,8 @@
 			<Add option="`wx-config --cflags`" />
 		</Compiler>
 		<Linker>
-			<Add option="`wx-config --libs`" />
-			<Add library="libctb_gpib" />
-			<Add library="wxawxu" />
+			<Add option="`wx-config --libs all`" />
+			<Add option="`pkg-config --libs libserialport`" />
 		</Linker>
 		<Unit filename="DataInputControl.cpp" />
 		<Unit filename="DataInputControl.h" />
@@ -49,20 +48,13 @@
 		<Unit filename="DebuggerTerminalMain.h" />
 		<Unit filename="SelectFontSizeDialog.cpp" />
 		<Unit filename="SelectFontSizeDialog.h" />
+		<Unit filename="TcpServer.cpp" />
+		<Unit filename="TcpServer.hpp" />
+		<Unit filename="led.cpp" />
+		<Unit filename="led.h" />
 		<Unit filename="wxsmith/DebuggerTerminalframe.wxs" />
 		<Unit filename="wxsmith/SelectFontSizeDialog.wxs" />
 		<Extensions>
-			<envvars />
-			<code_completion />
-			<lib_finder disable_auto="1" />
-			<debugger />
-			<wxsmith version="1">
-				<gui name="wxWidgets" src="DebuggerTerminalApp.cpp" main="DebuggerTerminalFrame" init_handlers="necessary" language="CPP" />
-				<resources>
-					<wxFrame wxs="wxsmith/DebuggerTerminalframe.wxs" src="DebuggerTerminalMain.cpp" hdr="DebuggerTerminalMain.h" fwddecl="0" i18n="1" name="DebuggerTerminalFrame" language="CPP" />
-					<wxDialog wxs="wxsmith/SelectFontSizeDialog.wxs" src="SelectFontSizeDialog.cpp" hdr="SelectFontSizeDialog.h" fwddecl="0" i18n="1" name="SelectFontSizeDialog" language="CPP" />
-				</resources>
-			</wxsmith>
 			<DoxyBlocks>
 				<comment_style block="0" line="0" />
 				<doxyfile_project />
@@ -72,6 +64,14 @@
 				<doxyfile_dot />
 				<general />
 			</DoxyBlocks>
+			<lib_finder disable_auto="1" />
+			<wxsmith version="1">
+				<gui name="wxWidgets" src="DebuggerTerminalApp.cpp" main="DebuggerTerminalFrame" init_handlers="necessary" language="CPP" />
+				<resources>
+					<wxFrame wxs="wxsmith/DebuggerTerminalframe.wxs" src="DebuggerTerminalMain.cpp" hdr="DebuggerTerminalMain.h" fwddecl="0" i18n="1" name="DebuggerTerminalFrame" language="CPP" />
+					<wxDialog wxs="wxsmith/SelectFontSizeDialog.wxs" src="SelectFontSizeDialog.cpp" hdr="SelectFontSizeDialog.h" fwddecl="0" i18n="1" name="SelectFontSizeDialog" language="CPP" />
+				</resources>
+			</wxsmith>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

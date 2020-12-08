@@ -108,8 +108,8 @@
 		<Unit filename="DebuggerTerminalMain.h" />
 		<Unit filename="SelectFontSizeDialog.cpp" />
 		<Unit filename="SelectFontSizeDialog.h" />
-		<Unit filename="externals/BoostAsioTcpServer/BoostAsioTcpServer/trunk/lib/TcpServer.cpp" />
-		<Unit filename="externals/BoostAsioTcpServer/BoostAsioTcpServer/trunk/lib/TcpServer.hpp" />
+		<Unit filename="TcpServer.cpp" />
+		<Unit filename="TcpServer.hpp" />
 		<Unit filename="led.cpp" />
 		<Unit filename="led.h" />
 		<Unit filename="resource.rc">

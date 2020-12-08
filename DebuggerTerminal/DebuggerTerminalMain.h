@@ -21,17 +21,17 @@ class DebuggerTerminalFrame: public wxFrame
 {
     public:
 
-        DebuggerTerminalFrame(wxWindow* parent,wxWindowID id = -1);
+        DebuggerTerminalFrame(wxWindow* parent, wxWindowID id = -1);
         virtual ~DebuggerTerminalFrame();
 
     private:
-        TcpServer* tcpserver;
-        boost::asio::io_service io_service_;
         uint16_t tcp_port_;
+        boost::asio::io_service io_service_;
+        TcpServer* tcpserver_;
 
     private:
-        bool initDone;
-        wxString defaultPerspective;
+        bool initDone_;
+        wxString defaultPerspective_;
 
     private:
         void CreateConnectionToolBar();

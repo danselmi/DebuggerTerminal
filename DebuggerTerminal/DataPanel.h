@@ -9,10 +9,10 @@
 #define DataPanelHexFormat   0x0002
 #define DataPanelDecFormat   0x0004
 #define DataPanelBinFormat   0x0008
-//#include <wx/scrolwin.h>
+#include <wx/scrolwin.h>
 
 
-class DataPanel : public wxPanel //wxScrolledWindow
+class DataPanel : public wxScrolledWindow
 {
     public:
         DataPanel(wxWindow *parent, wxWindowID id, int fontsize);

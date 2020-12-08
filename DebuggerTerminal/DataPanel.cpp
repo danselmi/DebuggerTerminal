@@ -32,7 +32,7 @@ BEGIN_EVENT_TABLE(DataPanel,wxPanel)
 END_EVENT_TABLE()
 
 DataPanel::DataPanel(wxWindow *parent, wxWindowID id, int fontsize):
-wxPanel(parent, id),
+wxScrolledWindow(parent, id),
 ruler_(true),
 rulerStart_(1),
 fontSize_(fontsize),
